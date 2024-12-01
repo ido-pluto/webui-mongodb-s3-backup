@@ -1,0 +1,53 @@
+---
+import { BButton } from '@astro-utils/forms/forms.js';
+import { randomUUID } from 'crypto';
+
+interface Props {
+    title?: string;
+    zIndex?: number;
+    message?: string;
+    closeAfter?: number;
+    closeAction?: () => void;
+}
+
+const { title = 'Success', message, zIndex = 99, closeAfter = 2.5, closeAction } = Astro.props;
+const id = randomUUID();
+
+if (closeAfter) {
+    Astro.locals.forms.scriptToRun += `setTimeout(() => document.getElementById('${id}')?.remove(), ${closeAfter * 1000});`;
+}
+---
+
+<div class='window' style={{ zIndex }} id={id}>
+    <div class='title-bar'>
+        <div class='title-bar-text'>{title}</div>
+        <div class='title-bar-controls'>
+            {
+                closeAction ? (
+                    <BButton aria-label='Close' onClick={closeAction} />
+                ) : (
+                    <button type='button' aria-label='Close' onclick={`document.getElementById('${id}').remove()`} />
+                )
+            }
+        </div>
+    </div>
+    <div class='window-body'>
+        {message && <p>{message}</p>}
+        <slot />
+    </div>
+</div>
+
+<style>
+    .window {
+        max-width: 80vh;
+        position: fixed;
+        top: 35%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .window-body {
+        max-height: 40vh;
+        overflow: auto;
+    }
+</style>

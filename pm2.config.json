@@ -1,0 +1,16 @@
+{
+  "apps": [
+    {
+      "name": "mongodb",
+      "script": "/usr/bin/mongod",
+      "args": "--bind_ip_all",
+      "exec_mode": "fork"
+    },
+    {
+      "name": "app",
+      "script": "/usr/bin/npm",
+      "args": "run production",
+      "exec_mode": "fork"
+    }
+  ]
+}

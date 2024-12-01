@@ -1,0 +1,34 @@
+---
+import { BButton, Bind, BindForm, BInput } from '@astro-utils/forms/forms.js';
+import Website from '../layouts/Website/Website.astro';
+import Alert from '../components/Alert.astro';
+import { WEBSITE_PASSWORD } from '../config.ts';
+
+const bind = Bind();
+
+function login() {
+    if (bind.password === WEBSITE_PASSWORD) {
+        bind.success = true;
+        Astro.locals.session.password = bind.password;
+        Astro.locals.forms.redirectTimeoutSeconds('/', 2);
+    } else {
+        bind.error = true;
+    }
+}
+---
+
+<Website title='Login'>
+    <div class="flex justify-center mt-20">
+        <fieldset>
+            <legend>Login</legend>
+            <BindForm {bind} omitState={['success', 'error']}>
+                {bind.success ? <Alert>Login successful</Alert> : null}
+                {bind.error ? <Alert title='Login Error'>Password did not match</Alert> : null}
+    
+                <BInput type='password' name='password' placeholder='password' required />
+                <BButton onClick={login} whenFormOK>Submit</BButton>
+            </BindForm>
+        </fieldset>
+    </div>
+
+</Website>

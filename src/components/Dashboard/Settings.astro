@@ -1,0 +1,44 @@
+---
+import { BButton, Bind, BindForm, BInput } from '@astro-utils/forms/forms.js';
+import { jsonDB } from '../../utils/jsonDB.ts';
+import Alert from '../Alert.astro';
+import { changeBackupInterval } from '../../server/backupInterval.ts';
+
+const bind = Bind(jsonDB.data);
+
+function save() {
+    jsonDB.update(data => {
+        data.mongoAdminConnectionString = bind.mongoAdminConnectionString;
+        data.backupIntervalHours = bind.backupIntervalHours;
+        data.maxBackupFiles = bind.maxBackupFiles;
+        data.backupON = bind.backupON;
+        data.s3Backup = bind.s3Backup;
+        return data;
+    });
+    bind.saveSuccess = true;
+    changeBackupInterval();
+}
+---
+
+<div class='max-w-96 flex flex-col gap-3'>
+    <BindForm {bind}>
+        <h1 class='text-xs'>Basic info</h1>
+
+        {bind.saveSuccess && <Alert message='Settings saved' />}
+        <BInput placeholder='Mongo connection string' class='w-full' name='mongoAdminConnectionString' />
+        <BInput placeholder='Backup hours, e.g: 24:00,5:00' class='w-full' name='backupIntervalHours' />
+        <BInput placeholder='Max backup files' class='w-full' name='maxBackupFiles' />
+
+        <BInput type='checkbox' name='backupON' id='backupON' />
+        <label for='backupON'>Auto backup ON</label>
+
+        <h1 class='text-xs'>S3 Credentials</h1>
+        <BInput placeholder='Access Key ID' class='w-full' name='s3Backup.accessKeyId' />
+        <BInput placeholder='Secret Access Key' class='w-full' name='s3Backup.secretAccessKey' />
+        <BInput placeholder='Bucket' class='w-full' name='s3Backup.bucket' />
+        <BInput placeholder='Region' class='w-full' name='s3Backup.region' />
+        <BInput placeholder='Endpoint' class='w-full' name='s3Backup.endpoint' />
+
+        <BButton class='w-full' onClick={save}>Save</BButton>
+    </BindForm>
+</div>

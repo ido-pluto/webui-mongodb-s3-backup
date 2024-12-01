@@ -1,0 +1,13 @@
+---
+import Dashboard from "../components/Dashboard/Dashboard.astro";
+import Website from "../layouts/Website/Website.astro";
+import { isLoggedIn } from "../utils/isLoggedIn.ts";
+
+if(!isLoggedIn(Astro)){
+    return Astro.redirect('/login');
+}
+
+---
+<Website title="Dashboard">
+    <Dashboard />
+</Website>

@@ -1,0 +1,199 @@
+---
+import { BButton, Bind, BindForm } from '@astro-utils/forms/forms.js';
+import { listAllS3Files, createDownloadLink } from '../../server/s3user.ts';
+import { timeAgo } from '../../utils/timeAgo.ts';
+import prettyBytes from 'pretty-bytes';
+import Alert from '../Alert.astro';
+import { deleteFileS3 } from '../../server/s3user.ts';
+import { backupDatabase, restoreDatabaseFromZip, isBackupInProgress, isRestoreInProgress } from '../../server/mongoBackup.ts';
+import { jsonDB } from '../../utils/jsonDB.ts';
+
+const bind = Bind({
+    latestIntervalError: jsonDB.data.latestIntervalError,
+});
+
+async function getAllFiles() {
+    const allFiles = await listAllS3Files();
+    return allFiles.sort((a, b) => b.LastModified - a.LastModified);
+}
+
+async function reload(showReloaded = true) {
+    try {
+        bind.allFiles = await getAllFiles();
+        if (showReloaded) {
+            bind.reloaded = true;
+        }
+    } catch (error) {
+        bind.allFiles ??= [];
+        bind.error = error;
+    }
+}
+
+if (!bind.allFiles) {
+    await reload(false);
+}
+
+async function downloadFile(file: any) {
+    try {
+        bind.downloadLink = await createDownloadLink(file.Key);
+        bind.selectedFile = file;
+    } catch (error) {
+        bind.error = error;
+    }
+}
+
+async function deleteFileAndReload(file: any) {
+    try {
+        await deleteFileS3(file.Key);
+        bind.deleteSuccess = true;
+        await reload(false);
+    } catch (error) {
+        bind.error = error;
+    }
+
+    bind.deleteFile = null;
+}
+
+async function createBackup() {
+    if (isBackupInProgress()) {
+        bind.error = 'Backup is already in progress';
+        return;
+    }
+
+    try {
+        const response = backupDatabase();
+        bind.success = response;
+        await reload(false);
+    } catch (error) {
+        bind.error = error;
+    }
+}
+
+async function restoreDatabase(key: string) {
+    if (isRestoreInProgress()) {
+        bind.error = 'Restore is already in progress';
+        return;
+    }
+
+    try {
+        const response = await restoreDatabaseFromZip(key);
+        bind.success = response;
+    } catch (error) {
+        bind.error = error;
+    }
+
+    bind.restoreBackupFromFile = null;
+}
+
+function closeLatestIntervalError() {
+    bind.latestIntervalError = null;
+    jsonDB.update(data => {
+        data.latestIntervalError = null;
+        return data;
+    });
+}
+---
+
+<div class='flex flex-col gap-4'>
+    <BindForm {bind} omitState={['reloaded', 'downloadLink', 'selectedFile', 'deleteSuccess', 'error', 'backupCreated', 'success']}>
+        <div class='flex justify-between'>
+            <BButton onClick={reload}>Reload</BButton>
+            <BButton onClick={createBackup} disabled={isBackupInProgress()}>Create Backup</BButton>
+        </div>
+        {bind.reloaded && <Alert message='Reloaded' />}
+        {bind.deleteSuccess && <Alert message='File Deleted' />}
+        {bind.backupCreated && <Alert message='Backup Created' />}
+        {bind.error && <Alert title='An error occurred' message={bind.error} closeAfter={0} />}
+        {bind.latestIntervalError && <Alert title='An error occurred in interval backup' message={bind.latestIntervalError} closeAction={closeLatestIntervalError} closeAfter={0} />}
+        {bind.success && <Alert message={bind.success} closeAfter={0} />}
+
+        {
+            bind.downloadLink && (
+                <Alert title='Download File' closeAfter={0}>
+                    <div>
+                        <a href={bind.downloadLink} target='_block' download={bind.selectedFile.Key}>
+                            Click here to download "{bind.selectedFile.Key}" ({prettyBytes(bind.selectedFile.Size)})
+                        </a>
+                    </div>
+                </Alert>
+            )
+        }
+
+        {
+            bind.deleteFile && (
+                <Alert title='Delete File' closeAfter={0} closeAction={() => (bind.deleteFile = null)}>
+                    <div>
+                        Are you sure you want to delete "{bind.deleteFile.Key}" ({prettyBytes(bind.deleteFile.Size)})?
+                    </div>
+                    <section class='field-row justify-end mt-2'>
+                        <BButton onClick={() => deleteFileAndReload(bind.deleteFile)}>Yes</BButton>
+                        <BButton onClick={() => (bind.deleteFile = null)}>No</BButton>
+                    </section>
+                </Alert>
+            )
+        }
+
+        {
+            bind.restoreBackupFromFile && (
+                <Alert title='Restore Backup' closeAfter={0} closeAction={() => (bind.restoreBackupFromFile = null)}>
+                    <div>
+                        Are you sure you want to restore the backup from "{bind.restoreBackupFromFile.Key}" ({prettyBytes(bind.restoreBackupFromFile.Size)})?
+                    </div>
+                    <section class='field-row justify-end mt-2'>
+                        <BButton onClick={() => restoreDatabase(bind.restoreBackupFromFile.Key)}>Yes</BButton>
+                        <BButton onClick={() => (bind.restoreBackupFromFile = null)}>No</BButton>
+                    </section>
+                </Alert>
+            )
+        }
+
+        <div class='sunken-panel' style='max-height: calc(90vh - 200px);'>
+            <table class='interactive w-full'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Size</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        bind.allFiles.map(file => (
+                            <tr>
+                                <td>{file.Key}</td>
+                                <td>{timeAgo.format(file.LastModified)}</td>
+                                <td>{prettyBytes(file.Size)}</td>
+                                <th>
+                                    <BButton onClick={() => downloadFile(file)}>Download</BButton>
+                                    <BButton onClick={() => (bind.deleteFile = file)}>Delete</BButton>
+                                    <BButton onClick={() => (bind.restoreBackupFromFile = file)}>Restore</BButton>
+                                </th>
+                            </tr>
+                        ))
+                    }
+                </tbody>
+            </table>
+        </div>
+    </BindForm>
+</div>
+
+<script>
+    document.querySelectorAll('table.interactive').forEach(element => {
+        element.addEventListener('click', event => {
+            const highlightedClass = 'highlighted';
+            const isRow = element => element.tagName === 'TR' && element.parentElement.tagName === 'TBODY';
+            const newlySelectedRow: any = event.composedPath().find(isRow);
+            const previouslySelectedRow: any = Array.from(newlySelectedRow.parentElement.children)
+                .filter(isRow)
+                .find((element: any) => element.classList.contains(highlightedClass));
+            if (previouslySelectedRow) {
+                previouslySelectedRow.classList.toggle(highlightedClass);
+            }
+
+            if (newlySelectedRow) {
+                newlySelectedRow.classList.toggle(highlightedClass);
+            }
+        });
+    });
+</script>

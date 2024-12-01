@@ -1,0 +1,50 @@
+---
+import Backups from './Backups.astro';
+import Settings from './Settings.astro';
+---
+
+<div class='window-body'>
+    <menu role='tablist'>
+        <li role='tab' aria-selected='true'>
+            <a href='#backups'>Backups & Restore</a>
+        </li>
+        <li role='tab'>
+            <a href='#settings'>Settings</a>
+        </li>
+    </menu>
+    <div class='window' role='tabpanel'>
+        <div class='window-body'>
+            <div class='tab-data' id='backups'>
+                <Backups />
+            </div>
+            <div class='tab-data' id='settings'>
+                <Settings />
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tab-data {
+        display: none;
+    }
+    .tab-data:target {
+        display: block;
+    }
+</style>
+
+<script>
+    const updateSelectedTab = (hash = window.location.hash || '#backups') => {
+        window.location.hash = hash;
+        document.querySelectorAll('[role="tab"]').forEach(tab => {
+            tab.setAttribute('aria-selected', 'false');
+        });
+        document.querySelector(`[href='${hash}']`).parentElement.setAttribute('aria-selected', 'true');
+    }
+
+    updateSelectedTab();
+
+    document.addEventListener('click', e => {
+        setTimeout(updateSelectedTab);
+    });
+</script>

@@ -1,0 +1,41 @@
+{
+  "name": "mongo-ui-backup-s3",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "production": "node dist/server/entry.mjs",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astro-utils/forms": "^3.13.19",
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/node": "^8.3.4",
+    "@astrojs/tailwind": "^5.1.2",
+    "@aws-sdk/client-s3": "^3.701.0",
+    "@aws-sdk/s3-request-presigner": "^3.701.0",
+    "98.css": "^0.1.20",
+    "adm-zip": "^0.5.16",
+    "astro": "^4.16.16",
+    "execa": "^9.5.1",
+    "filenamify": "^6.0.0",
+    "fs-extra": "^11.2.0",
+    "ipull": "^3.9.2",
+    "javascript-time-ago": "^2.5.11",
+    "lifecycle-utils": "^1.7.0",
+    "lowdb": "^7.0.1",
+    "node-schedule": "^2.1.1",
+    "pretty-bytes": "^6.1.1",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.10.0",
+    "@types/node-schedule": "^2.1.7"
+  }
+}

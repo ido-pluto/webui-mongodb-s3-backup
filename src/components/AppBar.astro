@@ -1,0 +1,52 @@
+---
+import { BButton, Bind, BindForm } from '@astro-utils/forms/forms.js';
+import { isLoggedIn } from '../utils/isLoggedIn.ts';
+import Alert from './Alert.astro';
+
+const isLoginIn = isLoggedIn(Astro);
+const bind = Bind({
+    isLoginIn: isLoginIn,
+});
+
+function logout() {
+    delete Astro.locals.session.password;
+    bind.loggedOut = true;
+    Astro.locals.forms.redirectTimeoutSeconds('/login', 2);
+}
+---
+
+<BindForm {bind} omitState={['loggedOut']}>
+    <div class='window'>
+        <div class='window-body flex justify-between'>
+            <a href='/'>
+                <span class='flex items-center gap-2'>
+                    <img src='/favicon.png' class='logo' />
+                    Mongo Admin
+                </span>
+            </a>
+
+            {
+                bind.isLoginIn ? (
+                    <BButton class='font-bold' onClick={logout}>
+                        Logout
+                    </BButton>
+                ) : null
+            }
+        </div>
+    </div>
+
+    {
+        bind.loggedOut ? (
+            <div class='flex justify-center mt-5'>
+                <Alert message='You have been logged out' zIndex={999}/>
+            </div>
+        ) : null
+    }
+</BindForm>
+
+<style>
+    .logo {
+        width: 30px;
+        height: 30px;
+    }
+</style>
