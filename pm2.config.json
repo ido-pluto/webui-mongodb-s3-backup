@@ -3,7 +3,7 @@
     {
       "name": "mongodb",
       "script": "/usr/bin/mongod",
-      "args": "--bind_ip_all",
+      "args": "--verbosity 0 --bind_ip_all",
       "exec_mode": "fork"
     },
     {
