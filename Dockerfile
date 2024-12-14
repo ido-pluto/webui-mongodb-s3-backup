@@ -21,7 +21,6 @@ COPY ./astro.config.mjs /app/
 COPY ./tailwind.config.mjs /app/
 COPY ./tsconfig.json /app/
 COPY ./pm2.config.json /app/
-COPY ./start.sh /app/
 
 RUN npx astro telemetry disable
 RUN npm run build
@@ -33,4 +32,4 @@ ENV WEBSITE_SECRET=""
 ENV MONGO_INITDB_ROOT_USERNAME=root
 ENV MONGO_INITDB_ROOT_PASSWORD=example
 
-CMD ["/bin/bash", "/app/start.sh"]
+CMD ["pm2-runtime", "start", "/app/pm2.config.json"]
