@@ -7,6 +7,8 @@
     "start": "astro dev",
     "build": "astro check && astro build",
     "production": "node dist/server/entry.mjs",
+    "ensureMongoAuth": "node scripts/ensure-mongo-auth.mjs",
+    "dockerProduction": "npm run ensureMongoAuth && pm2-runtime start pm2.config.json",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -19,7 +21,7 @@
     "@aws-sdk/s3-request-presigner": "^3.701.0",
     "98.css": "^0.1.20",
     "adm-zip": "^0.5.16",
-    "astro": "^4.16.16",
+    "astro": "^4.16.18",
     "execa": "^9.5.1",
     "filenamify": "^6.0.0",
     "fs-extra": "^11.2.0",

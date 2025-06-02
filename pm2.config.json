@@ -3,7 +3,7 @@
     {
       "name": "mongodb",
       "script": "/usr/bin/mongod",
-      "args": "--quiet --replSet rs0 --bind_ip_all",
+      "args": "--quiet --replSet rs0 --bind_ip_all --auth --keyFile storage/mongodb-keyfile",
       "exec_mode": "fork"
     },
     {

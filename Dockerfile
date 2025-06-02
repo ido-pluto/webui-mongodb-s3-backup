@@ -11,10 +11,13 @@ RUN curl -fsSL https://deb.nodesource.com/setup_current.x | bash -
 RUN apt-get install -y nodejs
 RUN npm install -g pm2
 
+RUN mkdir -p storage
+
 COPY package.json /app/
 COPY package-lock.json /app/
 RUN npm install
 
+COPY ./scripts/ /app/scripts/
 COPY ./src/ /app/src/
 COPY ./public/ /app/public/
 COPY ./astro.config.mjs /app/
@@ -32,4 +35,4 @@ ENV WEBSITE_SECRET=""
 ENV MONGO_INITDB_ROOT_USERNAME=root
 ENV MONGO_INITDB_ROOT_PASSWORD=example
 
-CMD ["pm2-runtime", "start", "/app/pm2.config.json"]
+CMD ["npm", "run", "dockerProduction"]
