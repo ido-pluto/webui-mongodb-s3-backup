@@ -9,6 +9,7 @@ import { createDownloadLink, uploadFileStream } from './s3user.ts';
 import { downloadFile } from 'ipull';
 import { withLock, isLockActive } from 'lifecycle-utils';
 import filenamify from 'filenamify';
+import unzipper from "unzipper";
 
 const backupPath = path.join(STORAGE_PATH, 'db-temp');
 const backupDBZipPath = path.join(STORAGE_PATH, 'tempDb.zip');
@@ -40,15 +41,6 @@ export async function backupDatabase() {
                     forceZip64: true
                 });
 
-                archive.on("warning", err => {
-                    if (err.code === "ENOENT") {
-                        console.warn("Missing file:", err);
-                    } else {
-                        throw err;
-                    }
-                });
-
-                archive.on("error", err => { throw err; });
                 archive.pipe(out);
                 archive.directory(backupPath, false);
                 await archive.finalize();
@@ -77,8 +69,10 @@ export async function restoreDatabaseFromZip(key: string) {
             try {
                 await downloader.download();
                 await fs.emptyDir(backupPath);
-                const zip = new AdmZip(downloader.finalFileAbsolutePath);
-                zip.extractAllTo(backupPath, true);
+
+                await oldFs.createReadStream(downloader.finalFileAbsolutePath)
+                    .pipe(unzipper.Extract({ path: backupPath }))
+                    .promise();
 
                 const { stderr, code } = await $`mongorestore --uri="${jsonDB.data.mongoAdminConnectionString}" --dir="${backupPath}" --drop`;
                 if (code) {
