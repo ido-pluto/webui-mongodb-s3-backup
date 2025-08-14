@@ -1,9 +1,10 @@
 import { $ } from 'execa';
 import * as fs from "fs-extra";
+import oldFs from "fs";
 import path from "path";
 import { STORAGE_PATH } from '../config.ts';
 import { jsonDB } from '../utils/jsonDB.ts';
-import AdmZip from "adm-zip";
+import archiver from "archiver";
 import { createDownloadLink, uploadFileStream } from './s3user.ts';
 import { downloadFile } from 'ipull';
 import { withLock, isLockActive } from 'lifecycle-utils';
@@ -33,9 +34,24 @@ export async function backupDatabase() {
                     throw new Error(stderr);
                 }
 
-                const zip = new AdmZip();
-                zip.addLocalFolder(backupPath);
-                await zip.writeZipPromise(backupDBZipPath, { overwrite: true });
+                const out = oldFs.createWriteStream(backupDBZipPath);
+                const archive = archiver("zip", {
+                    zlib: { level: 9 },
+                    forceZip64: true
+                });
+
+                archive.on("warning", err => {
+                    if (err.code === "ENOENT") {
+                        console.warn("Missing file:", err);
+                    } else {
+                        throw err;
+                    }
+                });
+
+                archive.on("error", err => { throw err; });
+                archive.pipe(out);
+                archive.directory(backupPath, false);
+                await archive.finalize();
 
                 const backupName = filenamify(`mongodb-backup-${new Date().toISOString()}.zip`, { replacement: '_' });
                 await uploadFileStream(backupDBZipPath, backupName);

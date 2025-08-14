@@ -20,7 +20,7 @@
     "@aws-sdk/client-s3": "^3.701.0",
     "@aws-sdk/s3-request-presigner": "^3.701.0",
     "98.css": "^0.1.20",
-    "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
     "astro": "^4.16.18",
     "execa": "^9.5.1",
     "filenamify": "^6.0.0",
